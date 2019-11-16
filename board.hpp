@@ -1,7 +1,6 @@
 #ifndef BOARD_H
 #define BOARD_H
 #include <cstdint>
-#include <exception>
 #include "bitmap.hpp"
 
 namespace yrq {

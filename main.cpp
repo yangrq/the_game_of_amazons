@@ -1,6 +1,5 @@
-#include <chrono>
 #include "board.hpp"
-#include <Windows.h>
+#include <chrono>
 
 using namespace yrq;
 int main() {
@@ -12,16 +11,15 @@ int main() {
   queen.output();
   std::cout << "ALL POSSIBLE MOVES AT (" << 3 << "," << 3 << "):" << std::endl;
   bd.accessible(3, 3).output();
+  std::chrono::high_resolution_clock clk;
 
-  LARGE_INTEGER t1, t2, freq;
-  QueryPerformanceFrequency(&freq);
-  QueryPerformanceCounter(&t1);
+  auto t1 = clk.now();
   for (int j = 0; j < 1e7; ++j) {
     int tmp = j & 0x3F;
     bdcp.get_queen_map().set(tmp, false);
     bdcp.get_queen_map().set(tmp % 8, true);
     no_use += bdcp.accessible_raw(tmp);
   }
-  QueryPerformanceCounter(&t2);
-  std::cout << (double)(t2.QuadPart - t1.QuadPart) / freq.QuadPart << "s" << std::endl << no_use;
+  auto t2 = clk.now();
+  std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "ms" << std::endl << no_use;
 }
