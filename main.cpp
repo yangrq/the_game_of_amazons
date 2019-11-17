@@ -1,14 +1,16 @@
 #include "board.hpp"
+#include "evaluator.hpp"
 #include <chrono>
 
 using namespace yrq;
 int main() {
-  bitmap queen(0xFF88888888888888);
+  /*
+  bitmap amazon(0xFF88888888888888);
   bitmap arrow;
   uint64_t no_use = 0;
-  board bd(queen, arrow), bdcp = bd;
+  board bd(amazon, arrow), bdcp = bd;
   std::cout << "ORIGINAL BIT_TABLE:" << std::endl;
-  queen.output();
+  amazon.output();
   std::cout << "ALL POSSIBLE MOVES AT (" << 3 << "," << 3 << "):" << std::endl;
   bd.accessible(3, 3).output();
   std::chrono::high_resolution_clock clk;
@@ -21,5 +23,16 @@ int main() {
     no_use += bdcp.accessible_raw(tmp);
   }
   auto t2 = clk.now();
-  std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "ms" << std::endl << no_use;
+  std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "ms" << std::endl << no_use << std::endl;
+  */
+  bitmap dis(0x201220223908557f);
+  std::cout << "BOARD OUTPUT:" << std::endl;
+  dis.output();
+  evaluator ev((board(dis)));
+  evaluator::teil fr1(4, 1), fr2(1, 4), fr3(5, 5);
+  ev.queen_min_moves(fr1);
+  ev.queen_min_moves(fr2);
+  ev.queen_min_moves(fr3);
+  std::cout << "DISTANCE ARRAY OUTPUT:" << std::endl;
+  ev.distance_output();
 }

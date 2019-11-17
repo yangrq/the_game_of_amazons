@@ -101,6 +101,9 @@ namespace yrq {
       is_valid(_pos, 0, 63);
       return get(_pos);
     }
+    bitmap operator|(const bitmap& v) {
+      return bitmap(raw | v.raw);
+    }
   };
 }
 #endif
