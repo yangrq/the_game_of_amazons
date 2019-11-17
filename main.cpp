@@ -28,11 +28,4 @@ int main() {
   bitmap dis(0x201220223908557f);
   std::cout << "BOARD OUTPUT:" << std::endl;
   dis.output();
-  evaluator ev((board(dis)));
-  evaluator::teil fr1(4, 1), fr2(1, 4), fr3(5, 5);
-  ev.queen_min_moves(fr1);
-  ev.queen_min_moves(fr2);
-  ev.queen_min_moves(fr3);
-  std::cout << "DISTANCE ARRAY OUTPUT:" << std::endl;
-  ev.distance_output();
 }
