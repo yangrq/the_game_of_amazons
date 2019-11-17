@@ -13,7 +13,6 @@
 #include "board.hpp"
 
 namespace yrq {
-
   class evaluator {
     board bd;
     using distance_matrix = uint8_t[8][8];
@@ -30,14 +29,13 @@ namespace yrq {
       return -1;
     }
     double _territory_ingredient(const std::array<teil, 4>& p1, const std::array<teil, 4>& p2) {
-      auto f_w_t1 = [](double w) {
-        return 0.1 + 0.9 * std::pow(2, -w);
-      };
-      auto f_w_t2 = [](double w) { return std::pow(w, 0.2); };
-      auto f_w_c1 = [](double w) { return 0.3 * std::pow(std::log(w + 1) / (w + 5), 0.5); };
-      auto f_w_t4 = [](double w) { return 0.08 * std::atan(w); };
+      auto f_w_t1 = [](double w) { return w; };
+      auto f_w_t2 = [](double w) { return w; };
+      auto f_w_c1 = [](double w) { return w; };
+      auto f_w_c2 = [](double w) { return w; };
       auto [t1, c1, w] = _t1_c1_w(p1, p2);
       auto [t2, c2] = _t2_c2(p1, p2);
+      return f_w_t1(w) + f_w_c1(c1) + f_w_t2(w) + f_w_c2(w);
     }
     std::tuple<double, double, double> _t1_c1_w(const std::array<teil, 4>& p1, const std::array<teil, 4>& p2) {
       distance_matrix dm1, dm2;
