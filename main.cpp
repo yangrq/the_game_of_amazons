@@ -26,6 +26,11 @@ int main() {
   std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "ms" << std::endl << no_use << std::endl;
   */
   bitmap dis(0x201220223908557f);
+  evaluator ev((board(dis)));
+  evaluator::piece f1{ 2,0 }, f2{ 1,6 }, f3{ 4,6 }, f4{ 5,3 };
+  evaluator::piece e1{ 4,1 }, e2{ 1,4 }, e3{ 5,5 }, e4{ 3,3 };
+  std::array<evaluator::piece, 4> p1 = { f1,f2,f3,f4 }, p2 = { e1,e2,e3,e4 };
   std::cout << "BOARD OUTPUT:" << std::endl;
   dis.output();
+  
 }

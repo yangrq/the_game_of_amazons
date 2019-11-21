@@ -8,20 +8,19 @@ namespace yrq {
     bitmap amazon;
     bitmap arrow;
   public:
-    class teil {
-      friend teil;
+    class piece {
       uint8_t idx;
     public:
-      teil() noexcept :idx(0) {}
-      teil(uint8_t x, uint8_t y, bool is_obstacle = false) noexcept :idx(x << 5 | y << 2 | (uint8_t)is_obstacle) {}
-      teil(uint8_t _idx) noexcept : idx(_idx) {}
-      uint8_t x() { return idx >> 5; }
-      uint8_t y() { return (idx & 0x1C) >> 2; }
+      piece() noexcept :idx(0) {}
+      piece(uint8_t x, uint8_t y, bool is_obstacle = false) noexcept :idx(x << 5 | y << 2 | (uint8_t)is_obstacle) {}
+      piece(uint8_t _idx) noexcept : idx(_idx) {}
+      uint8_t x() const { return idx >> 5; }
+      uint8_t y() const { return (idx & 0x1C) >> 2; }
       bool is_obstacle() { return idx & 1; }
-      bool operator==(const teil& v) {
+      bool operator==(const piece& v) {
         return v.idx == idx;
       }
-      uint8_t eigen_value() {
+      uint8_t eigen_value() const {
         return idx >> 2;
       }
       static uint8_t eigen_value(uint8_t x, uint8_t y) {
@@ -66,7 +65,7 @@ namespace yrq {
       int x = offset % 8; int y = offset / 8;
       return accessible(y, x);
     }
-    bool is_obstacle(teil t) { return (amazon | arrow)[t.y()][t.x()]; }
+    bool is_obstacle(piece t) { return (amazon | arrow)[t.y()][t.x()]; }
     bool is_obstacle(uint8_t x, uint8_t y) { return (amazon | arrow)[y][x]; }
   private:
   };
