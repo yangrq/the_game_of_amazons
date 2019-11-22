@@ -36,12 +36,7 @@ int main(int argc, char** argv) {
       ev.players[0][j] = board::piece(result.xy[j][0], result.xy[j][1]);
     for (int j = 0; j < 4; ++j)
       ev.players[1][j] = board::piece(result.xy[j + 4][0], result.xy[j + 4][1]);
-    ev._generate_distance_matrix();
-    ev._territory_ingredient();
-    ev._mobility_ingredient();
-    ev._guard_ingredient();
-    ev._amazons_distribution(ev.players[0]);
-    ev._amazons_distribution(ev.players[1]);
+    ev.evaluate();
     emit_key_value("}", ":::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::", true);
     cout << "+--------------------------------------------------------------------------------------+" << std::endl;
   }

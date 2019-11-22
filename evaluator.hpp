@@ -55,7 +55,19 @@ namespace yrq {
       memset(merged_dm_2[1], (uint8_t)(-1), 64);
     };
     ~evaluator() noexcept {};
-  public:
+    double evaluate() {
+      double r = 0;
+      _generate_distance_matrix();
+      r += _territory_ingredient();
+      r += _mobility_ingredient();
+      r += _guard_ingredient();
+      r += _distribution_ingredient();
+#ifdef _DEBUG
+      emit_key_value("EVALUATE RESULT", r, true);
+#endif
+      return r;
+    }
+  private:
     //输出距离矩阵
     void _debug_printf_distance_matrix(distance_matrix dm) {
       for (int i = 0; i < 8; ++i) {
@@ -150,9 +162,18 @@ namespace yrq {
         p[2].x(), p[2].y(),
         p[3].x(), p[3].y(),
         std::sqrt(sum / 10.0) - 1.5);
-      emit_key_value("d", std::sqrt(sum / 10.0) - 1.5, true);
 #endif
-      return std::sqrt(sum / 10.0) - 3.0;
+      return std::sqrt(sum / 10.0) - 1.5;
+    }
+    //生成分布（distribution）参量
+    double _distribution_ingredient() {
+      double d0 = _amazons_distribution(players[0]);
+      double d1 = _amazons_distribution(players[1]);
+#ifdef _DEBUG
+      std::printf("d:%lf\n", w / 20.0 * (d0 - d1));
+      emit_key_value("d", w / 20.0 * (d0 - d1), true);
+#endif
+      return w / 20.0 * (d0 - d1);
     }
     //计算t1,c1和局势进度特征值w
     std::tuple<double, double, double> _t1_c1_w() {
