@@ -1,36 +1,49 @@
 #include "board.hpp"
 #include "evaluator.hpp"
+#include "utility.hpp"
 #include <chrono>
 
 using namespace yrq;
-int main() {
-  /*
-  bitmap amazon(0xFF88888888888888);
-  bitmap arrow;
-  uint64_t no_use = 0;
-  board bd(amazon, arrow), bdcp = bd;
-  std::cout << "ORIGINAL BIT_TABLE:" << std::endl;
-  amazon.output();
-  std::cout << "ALL POSSIBLE MOVES AT (" << 3 << "," << 3 << "):" << std::endl;
-  bd.accessible(3, 3).output();
-  std::chrono::high_resolution_clock clk;
-
-  auto t1 = clk.now();
-  for (int j = 0; j < 1e7; ++j) {
-    int tmp = j & 0x3F;
-    bdcp.get_queen_map().set(tmp, false);
-    bdcp.get_queen_map().set(tmp % 8, true);
-    no_use += bdcp.accessible_raw(tmp);
+using namespace std;
+int main(int argc, char** argv) {
+  if (argc < 2) cerr << "please select a dataset directory" << endl;
+  filesystem::directory_iterator fs_dir_it(argv[1]);
+  vector<filesystem::directory_entry> files;
+  for (const auto& file : fs_dir_it)
+    files.push_back(file);
+  sort(files.begin(), files.end());
+  for (const auto& file : files) {
+    if (!file.is_regular_file()) continue;
+    cout << "+--------------------------------------------------------------------------------------+" << std::endl;
+    cout << "FILE " << file.path() << endl;
+    emit_key_value("{", ":::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::", true);
+    emit_key_value("file", file.path(), true);
+    string info;
+    bit_matrix_file result;
+    try {
+      info = bit_matrix_filename_parse(std::filesystem::path(file.path()).stem().string());
+      cout << info;
+      result = bit_matrix_file_load(file.path().string());
+    }
+    catch (const std::exception&) {
+      return 1;
+    }
+    board bd(result.bd);
+    cout << "BOARD" << std::endl;
+    bd.get_queen_map().output();
+    evaluator ev(bd);
+    for (int j = 0; j < 4; ++j)
+      ev.players[0][j] = board::piece(result.xy[j][0], result.xy[j][1]);
+    for (int j = 0; j < 4; ++j)
+      ev.players[1][j] = board::piece(result.xy[j + 4][0], result.xy[j + 4][1]);
+    ev._generate_distance_matrix();
+    ev._territory_ingredient();
+    ev._mobility_ingredient();
+    ev._guard_ingredient();
+    ev._amazons_distribution(ev.players[0]);
+    ev._amazons_distribution(ev.players[1]);
+    emit_key_value("}", ":::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::", true);
+    cout << "+--------------------------------------------------------------------------------------+" << std::endl;
   }
-  auto t2 = clk.now();
-  std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "ms" << std::endl << no_use << std::endl;
-  */
-  bitmap dis(0x201220223908557f);
-  evaluator ev((board(dis)));
-  evaluator::piece f1{ 2,0 }, f2{ 1,6 }, f3{ 4,6 }, f4{ 5,3 };
-  evaluator::piece e1{ 4,1 }, e2{ 1,4 }, e3{ 5,5 }, e4{ 3,3 };
-  std::array<evaluator::piece, 4> p1 = { f1,f2,f3,f4 }, p2 = { e1,e2,e3,e4 };
-  std::cout << "BOARD OUTPUT:" << std::endl;
-  dis.output();
-  
+
 }

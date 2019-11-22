@@ -6,65 +6,129 @@
 #include <bitset>
 #include <array>
 #include <algorithm>
+#include <functional>
 #include <utility>
 #include <initializer_list>
 #include <iomanip>
 #include "bitmap.hpp"
 #include "board.hpp"
+#include "utility.hpp"
 
 namespace yrq {
   class evaluator {
     board bd; //位棋盘
     using distance_matrix = uint8_t[8][8];  //距离矩阵
     using distance_matrix_group = std::array<distance_matrix, 4>; //距离矩阵组
-    distance_matrix_group dm1_1{ (uint8_t)-1 }, dm2_1{ (uint8_t)-1 }; //玩家1,2的queen距离矩阵组
-    distance_matrix_group dm1_2{ (uint8_t)-1 }, dm2_2{ (uint8_t)-1 }; //玩家1,2的king距离矩阵组
-    distance_matrix merged_dm1_1{ (uint8_t)-1 }, merged_dm2_1{ (uint8_t)-1 }; //玩家1,2的queen距离矩阵组合并后的最小queen距离矩阵
-    distance_matrix merged_dm1_2{ (uint8_t)-1 }, merged_dm2_2{ (uint8_t)-1 }; //玩家1,2的king距离矩阵组合并后的最小king距离矩阵
-  public:
     using player = std::array<board::piece, 4>;  //玩家：包含四个棋子
     using piece = board::piece;
-    player player1, player2;
-    evaluator(board _bd) noexcept :bd(_bd) {}
-    evaluator() noexcept :bd() {};
+    std::array<distance_matrix_group, 2> dm_1;    //玩家1,2的queen距离矩阵组
+    std::array<distance_matrix_group, 2> dm_2;    //玩家1,2的king距离矩阵组
+    std::array<distance_matrix, 2> merged_dm_1;   //玩家1,2的queen距离矩阵组合并后的最小queen距离矩阵
+    std::array<distance_matrix, 2> merged_dm_2;   //玩家1,2的king距离矩阵组合并后的最小king距离矩阵
+  public:
+    std::array<player, 2> players;
+    double w = 0;
+    evaluator(board _bd) noexcept :bd(_bd) {
+      for (auto& dmg : dm_1)
+        for (auto& dm : dmg)
+          memset(dm, (uint8_t)(-1), 64);
+      for (auto& dmg : dm_2)
+        for (auto& dm : dmg)
+          memset(dm, (uint8_t)(-1), 64);
+
+      memset(merged_dm_1[0], (uint8_t)(-1), 64);
+      memset(merged_dm_1[1], (uint8_t)(-1), 64);
+      memset(merged_dm_2[0], (uint8_t)(-1), 64);
+      memset(merged_dm_2[1], (uint8_t)(-1), 64);
+    }
+    evaluator() noexcept {
+      for (auto& dmg : dm_1)
+        for (auto& dm : dmg)
+          memset(dm, (uint8_t)(-1), 64);
+      for (auto& dmg : dm_2)
+        for (auto& dm : dmg)
+          memset(dm, (uint8_t)(-1), 64);
+
+      memset(merged_dm_1[0], (uint8_t)(-1), 64);
+      memset(merged_dm_1[1], (uint8_t)(-1), 64);
+      memset(merged_dm_2[0], (uint8_t)(-1), 64);
+      memset(merged_dm_2[1], (uint8_t)(-1), 64);
+    };
     ~evaluator() noexcept {};
-  private:
+  public:
+    //输出距离矩阵
+    void _debug_printf_distance_matrix(distance_matrix dm) {
+      for (int i = 0; i < 8; ++i) {
+        for (int j = 0; j < 8; ++j)
+          std::cout << std::setw(4) << (unsigned)dm[j][i];
+        std::cout << std::endl;
+      }
+    }
     //根据双方最小距离取值的delta函数
     double _territory_determine_delta(uint8_t m, uint8_t n) {
       if (m == 255 && n == 255) return 0;
       if (m == n) return 0.125;
-      if (n < m) return 1;
+      if (m < n) return 1;
       return -1;
     }
     //生成之后所需的距离矩阵
-    void _generate_distance_matrix(const player& p1, const player& p2) {
+    void _generate_distance_matrix() {
       int idx = 0;
-      for (auto& m : p1)
-        _single_queen_min_moves(m, dm1_1[idx++]);
+      for (auto& m : players[0])
+        _single_queen_min_moves(m, dm_1[0][idx++]);
       idx = 0;
-      for (auto& m : p2)
-        _single_queen_min_moves(m, dm2_1[idx++]);
+      for (auto& m : players[1])
+        _single_queen_min_moves(m, dm_1[1][idx++]);
       idx = 0;
-      for (auto& m : p1)
-        _single_king_min_moves(m, dm1_2[idx++]);
+      for (auto& m : players[0])
+        _single_king_min_moves(m, dm_2[0][idx++]);
       idx = 0;
-      for (auto& m : p2)
-        _single_king_min_moves(m, dm2_2[idx++]);
+      for (auto& m : players[1])
+        _single_king_min_moves(m, dm_2[1][idx++]);
 
-      _merge_distance_matrix(merged_dm1_1, dm1_1);
-      _merge_distance_matrix(merged_dm2_1, dm2_1);
-      _merge_distance_matrix(merged_dm1_2, dm1_2);
-      _merge_distance_matrix(merged_dm2_2, dm2_2);
+      _merge_distance_matrix(merged_dm_1[0], dm_1[0]);
+      _merge_distance_matrix(merged_dm_1[1], dm_1[1]);
+      _merge_distance_matrix(merged_dm_2[0], dm_2[0]);
+      _merge_distance_matrix(merged_dm_2[1], dm_2[1]);
+#ifdef _DEBUG
+      std::cout << "merged_dm_1 player0:" << std::endl;
+      _debug_printf_distance_matrix(merged_dm_1[0]);
+      std::cout << "merged_dm_1 player1:" << std::endl;
+      _debug_printf_distance_matrix(merged_dm_1[1]);
+      std::cout << "merged_dm_2 player0:" << std::endl;
+      _debug_printf_distance_matrix(merged_dm_2[0]);
+      std::cout << "merged_dm_2 player1:" << std::endl;
+      _debug_printf_distance_matrix(merged_dm_2[1]);
+#endif
     }
     //生成领地（territory）参量
     double _territory_ingredient() {
-      auto f_w_t1 = [](double w) { return w; };
-      auto f_w_t2 = [](double w) { return w; };
-      auto f_w_c1 = [](double w) { return w; };
-      auto f_w_c2 = [](double w) { return w; };
       auto [t1, c1, w] = _t1_c1_w();
       auto [t2, c2] = _t2_c2();
-      return f_w_t1(w) * t1 + f_w_c1(w) * c1 + f_w_t2(w) * t2 + f_w_c2(w) * c2;
+      // f(t1,w) = [ 0.75 * 1.1 ^ (-w) + 0.25 ] * t1
+      auto f_w_t1 = [=](double v) { return (0.75 * std::pow(1.1, -w) + 0.25) * v; };
+      // f(t2,w) = [ 0.08 * sqrt( max { w-1 , 0 } ) ] * t2
+      auto f_w_t2 = [=](double v) { return (0.08 * std::sqrt(w - 1 > 0 ? w - 1 : 0))* v; };
+      // f(c1,w) = [ 1 - f_t1(w) - f_t2(w) ] * [ 0.6 * 1.1 ^ (-w) + 0.4 ] * c1
+      auto f_w_c1 = [=](double v) { return (1 - 0.75 * std::pow(1.1, -w) - 0.25 - 0.08 * std::sqrt(w - 1 > 0 ? w - 1 : 0))* (0.4 + 0.6 * std::pow(1.1, -w))* v; };
+      // f(c2,w) = [ 1 - f_t1(w) - f_t2(w) ] * [ 0.6 - 0.6 * 1.1 ^ (-w) ] * c2
+      auto f_w_c2 = [=](double v) { return (1 - 0.75 * std::pow(1.1, -w) - 0.25 - 0.08 * std::sqrt(w - 1 > 0 ? w - 1 : 0))* (1 - (0.4 + 0.6 * std::pow(1.1, -w)))* v; };
+#ifdef _DEBUG
+      std::printf("t1:%lf c1:%lf t2:%lf c2:%lf w:%lf\n", t1, c1, t2, c2, w);
+      std::printf("f(t1,w):%lf f(c1,w):%lf f(t2,w):%lf f(c2,w):%lf\n", f_w_t1(t1), f_w_c1(c1), f_w_t2(t2), f_w_c2(c2));
+      std::printf("t:%lf\n", f_w_t1(t1) + f_w_c1(c1) + f_w_t2(t2) + f_w_c2(c2));
+      emit_key_value("t1", t1);
+      emit_key_value("c1", c1);
+      emit_key_value("t2", t2);
+      emit_key_value("c2", c2);
+      emit_key_value("w", w, true);
+      emit_key_value("f(t1,w)", f_w_t1(t1));
+      emit_key_value("f(c1,w)", f_w_c1(c1));
+      emit_key_value("f(t2,w)", f_w_t2(t2));
+      emit_key_value("f(c2,w)", f_w_c2(c2));
+      emit_key_value("t", f_w_t1(t1) + f_w_c1(c1) + f_w_t2(t2) + f_w_c2(c2), true);
+#endif
+      return f_w_t1(t1) + f_w_c1(c1) + f_w_t2(t2) + f_w_c2(c2);
     }
     //将距离矩阵组合并为最小距离矩阵
     void _merge_distance_matrix(distance_matrix& out, const distance_matrix_group& in) {
@@ -79,18 +143,29 @@ namespace yrq {
       for (const auto& amazon1 : p)
         for (const auto& amazon2 : p)
           sum += std::sqrt(std::pow(std::abs((double)amazon1.x() - amazon2.x()), 2) + std::pow(std::abs((double)amazon1.y() - amazon2.y()), 2));
-      return sum;
+#ifdef _DEBUG
+      std::printf("pieces distribution [(%d,%d) (%d,%d) (%d,%d) (%d,%d)]:%lf\n",
+        p[0].x(), p[0].y(),
+        p[1].x(), p[1].y(),
+        p[2].x(), p[2].y(),
+        p[3].x(), p[3].y(),
+        std::sqrt(sum / 10.0) - 1.5);
+      emit_key_value("d", std::sqrt(sum / 10.0) - 1.5, true);
+#endif
+      return std::sqrt(sum / 10.0) - 3.0;
     }
     //计算t1,c1和局势进度特征值w
     std::tuple<double, double, double> _t1_c1_w() {
       double t1 = 0, c1 = 0, w = 0;
       for (int i = 0; i < 8; ++i)
         for (int j = 0; j < 8; ++j) {
-          t1 += _territory_determine_delta(merged_dm1_1[i][j], merged_dm2_1[i][j]);
-          c1 += std::pow(2, -merged_dm1_1[i][j]) - std::pow(2, -merged_dm2_1[i][j]);
-          w += std::pow(2, -std::abs(merged_dm1_1[i][j] - merged_dm2_1[i][j]));
+          if (bd.is_obstacle(i, j)) continue;
+          t1 += _territory_determine_delta(merged_dm_1[0][i][j], merged_dm_1[1][i][j]);
+          c1 += std::pow(2.0, -merged_dm_1[0][i][j]) - std::pow(2.0, -merged_dm_1[1][i][j]);
+          w += std::pow(2.0, -std::abs(merged_dm_1[0][i][j] - merged_dm_1[1][i][j]));
         }
       c1 *= 2;
+      this->w = w;
       return std::make_tuple(t1, c1, w);
     }
     //计算t2,c2
@@ -98,8 +173,9 @@ namespace yrq {
       double t2 = 0, c2 = 0;
       for (int i = 0; i < 8; ++i)
         for (int j = 0; j < 8; ++j) {
-          t2 += _territory_determine_delta(merged_dm1_2[i][j], merged_dm2_2[i][j]);
-          c2 += std::min(1.0, std::max(-1.0, (double)(merged_dm2_2[i][j] - merged_dm1_2[i][j]) / 6.0));
+          if (bd.is_obstacle(i, j)) continue;
+          t2 += _territory_determine_delta(merged_dm_2[0][i][j], merged_dm_2[1][i][j]);
+          c2 += std::min(1.0, std::max(-1.0, (double)(merged_dm_2[1][i][j] - merged_dm_2[0][i][j]) / 6.0));
         }
       return std::make_tuple(t2, c2);
     }
@@ -243,28 +319,99 @@ namespace yrq {
       }
     }
     //计算特定棋子的移动力
-    double _amazon_mobility(bool is_player1, size_t amazon_idx) {
+    double _amazon_mobility(size_t player_idx, size_t amazon_idx) {
       double a = 0.0;
-      auto opponent_distance = is_player1 ? merged_dm2_1 : merged_dm1_1;
-      auto self_amazon_d1 = is_player1 ? dm1_1 : dm2_1;
-      auto self_amazon_d2 = is_player1 ? dm1_2 : dm2_2;
       for (int i = 0; i < 8; ++i)
         for (int j = 0; j < 8; ++j)
-          if (opponent_distance[i][j] != 255 && self_amazon_d1[amazon_idx][i][j] <= 1)
-            a += std::pow(2, -self_amazon_d2[amazon_idx][i][j]) * _empty_neighbor_num(i, j);
+          if (merged_dm_1[1 - player_idx][i][j] != 255 && dm_1[player_idx][amazon_idx][i][j] <= 1)
+            a += std::pow(2.0, -dm_2[player_idx][amazon_idx][i][j]) * _empty_neighbor_num(i, j);
+#ifdef _DEBUG
+      std::printf("the mobility of (%d,%d):%lf\n", players[player_idx][amazon_idx].x(), players[player_idx][amazon_idx].y(), a);
+#endif
       return a;
     }
     //生成移动力（mobility）参量
-    double _mobility_ingredient(double w) {
+    double _mobility_ingredient() {
       double m1 = 0, m2 = 0;
-      auto f_w_m1 = [w](double m) {return m; };
-      auto f_w_m2 = [w](double m) {return m; };
+      auto f_w_m1 = [this](double m) {return 2 * (w < 10 ? 10 : w) * std::pow(1.2, -m); };
+      auto f_w_m2 = [this, &f_w_m1](double m) {return f_w_m1(m); };
       for (int i = 0; i < 4; ++i)
-        m1 += _amazon_mobility(true, (size_t)i);
+        m1 += f_w_m1(_amazon_mobility(0, (size_t)i));
       for (int i = 0; i < 4; ++i)
-        m2 += _amazon_mobility(false, (size_t)i);
-      return f_w_m1(m1) - f_w_m2(m2);
+        m2 += f_w_m2(_amazon_mobility(1, (size_t)i));
+#ifdef _DEBUG
+      std::printf("m1:%lf m2:%lf f(m1,w):%lf f(m2,w):%lf\n", m1, m2, f_w_m1(m1), f_w_m2(m2));
+      std::printf("m:%lf\n", f_w_m1(m1) - f_w_m2(m2));
+      emit_key_value("m1", m1);
+      emit_key_value("m2", m2);
+      emit_key_value("f(m1,w)", f_w_m1(m1));
+      emit_key_value("f(m2,w)", f_w_m2(m2));
+      emit_key_value("m", f_w_m2(m2) - f_w_m1(m1));
+#endif
+      return f_w_m2(m2) - f_w_m1(m1);
+    }
+    //扁平化二维距离数组
+    class _distance_flat_wrapper {
+      std::array<distance_matrix_group, 2>* p;
+    public:
+      _distance_flat_wrapper(std::array<distance_matrix_group, 2>& v) :p(&v) {};
+      ~_distance_flat_wrapper() = default;
+      distance_matrix& operator[](size_t idx) {
+        return (*p)[idx / 4][idx % 4];
+      }
+    };
+    _distance_flat_wrapper _flat_dm_1{ dm_1 };
+    //只有一项满足
+    std::tuple<bool, size_t> _only_one_satisfy(std::function<bool(size_t)> condition) {
+      for (int i = 0; i < 8; ++i)
+        if (condition(i)) {
+          bool satisfy = true;
+          for (int j = 0; j < 8; ++j) {
+            if (i == j) continue;
+            if (condition(j)) goto end;
+          }
+          return std::make_tuple(true, i);
+        }
+    end:
+      return std::make_tuple(false, 0);
+    }
+    //计算amazon的独占区域集合
+    std::array<std::array<size_t, 4>, 2> _amazon_exclusive_access_num() {
+      auto is_reachable_closure = [this](uint8_t x, uint8_t y) {
+        return [x, y, this](size_t piece_idx) {
+          return _flat_dm_1[piece_idx][x][y] != 255;
+        };
+      };
+      std::array<std::array<size_t, 4>, 2> exclusive_access_num = { 0 };
+      for (int i = 0; i < 8; ++i)
+        for (int j = 0; j < 8; ++j) {
+          auto [found, result] = _only_one_satisfy(is_reachable_closure(i, j));
+          if (found) ++exclusive_access_num[result / 4][result % 4];
+        }
+#ifdef _DEBUG
+      std::printf("player0: the number of exclusively accessible squares\n");
+      for (int i = 0; i < 4; ++i)
+        std::printf("%llu ", exclusive_access_num[0][i]);
+      printf("\n");
+      std::printf("player1: the number of exclusively accessible squares\n");
+      for (int i = 0; i < 4; ++i)
+        std::printf("%llu ", exclusive_access_num[1][i]);
+      printf("\n");
+#endif
+      return exclusive_access_num;
+    }
+    //生成守卫（guard）参量
+    double _guard_ingredient() {
+      long long sum = 0;
+      auto res = _amazon_exclusive_access_num();
+      for (auto v : res[0]) sum += v;
+      for (auto v : res[1]) sum -= v;
+#ifdef _DEBUG
+      std::printf("n:%llu g:%lf\n", sum, 0.2 * (sum > 0 ? std::pow(1.1, sum) : -std::pow(1.1, -sum)));
+      emit_key_value("g(n)", 0.2 * (sum > 0 ? std::pow(1.1, sum) : -std::pow(1.1, -sum)), true);
+#endif
+      return 0.2 * (sum > 0 ? std::pow(1.1, sum) : -std::pow(1.1, -sum));
     }
   };
 }
-#endif
+#endif 

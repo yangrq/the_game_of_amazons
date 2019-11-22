@@ -29,5 +29,8 @@
     <ClInclude Include="evaluator.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="utility.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
