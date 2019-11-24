@@ -1,5 +1,6 @@
 #ifndef EVALUATOR_H
 #define EVALUATOR_H
+#ifndef ALL_IN_ONE
 #include <vector>
 #include <cstdint>
 #include <cmath>
@@ -10,17 +11,20 @@
 #include <utility>
 #include <initializer_list>
 #include <iomanip>
+#endif
 #include "bitmap.hpp"
 #include "board.hpp"
 #include "utility.hpp"
 
 namespace yrq {
   class evaluator {
-    board bd; //位棋盘
+  public:
     using distance_matrix = uint8_t[8][8];  //距离矩阵
     using distance_matrix_group = std::array<distance_matrix, 4>; //距离矩阵组
     using player = std::array<board::piece, 4>;  //玩家：包含四个棋子
     using piece = board::piece;
+  private:
+    board bd; //位棋盘
     std::array<distance_matrix_group, 2> dm_1;    //玩家1,2的queen距离矩阵组
     std::array<distance_matrix_group, 2> dm_2;    //玩家1,2的king距离矩阵组
     std::array<distance_matrix, 2> merged_dm_1;   //玩家1,2的queen距离矩阵组合并后的最小queen距离矩阵
@@ -102,16 +106,6 @@ namespace yrq {
       _merge_distance_matrix(merged_dm_1[1], dm_1[1]);
       _merge_distance_matrix(merged_dm_2[0], dm_2[0]);
       _merge_distance_matrix(merged_dm_2[1], dm_2[1]);
-#ifdef _DEBUG
-      std::cout << "merged_dm_1 player0:" << std::endl;
-      _debug_printf_distance_matrix(merged_dm_1[0]);
-      std::cout << "merged_dm_1 player1:" << std::endl;
-      _debug_printf_distance_matrix(merged_dm_1[1]);
-      std::cout << "merged_dm_2 player0:" << std::endl;
-      _debug_printf_distance_matrix(merged_dm_2[0]);
-      std::cout << "merged_dm_2 player1:" << std::endl;
-      _debug_printf_distance_matrix(merged_dm_2[1]);
-#endif
     }
     //生成领地（territory）参量
     double _territory_ingredient() {
@@ -126,9 +120,6 @@ namespace yrq {
       // f(c2,w) = [ 1 - f_t1(w) - f_t2(w) ] * [ 0.6 - 0.6 * 1.1 ^ (-w) ] * c2
       auto f_w_c2 = [=](double v) { return (1 - 0.75 * std::pow(1.1, -w) - 0.25 - 0.08 * std::sqrt(w - 1 > 0 ? w - 1 : 0))* (1 - (0.4 + 0.6 * std::pow(1.1, -w)))* v; };
 #ifdef _DEBUG
-      std::printf("t1:%lf c1:%lf t2:%lf c2:%lf w:%lf\n", t1, c1, t2, c2, w);
-      std::printf("f(t1,w):%lf f(c1,w):%lf f(t2,w):%lf f(c2,w):%lf\n", f_w_t1(t1), f_w_c1(c1), f_w_t2(t2), f_w_c2(c2));
-      std::printf("t:%lf\n", f_w_t1(t1) + f_w_c1(c1) + f_w_t2(t2) + f_w_c2(c2));
       emit_key_value("t1", t1);
       emit_key_value("c1", c1);
       emit_key_value("t2", t2);
@@ -155,14 +146,6 @@ namespace yrq {
       for (const auto& amazon1 : p)
         for (const auto& amazon2 : p)
           sum += std::sqrt(std::pow(std::abs((double)amazon1.x() - amazon2.x()), 2) + std::pow(std::abs((double)amazon1.y() - amazon2.y()), 2));
-#ifdef _DEBUG
-      std::printf("pieces distribution [(%d,%d) (%d,%d) (%d,%d) (%d,%d)]:%lf\n",
-        p[0].x(), p[0].y(),
-        p[1].x(), p[1].y(),
-        p[2].x(), p[2].y(),
-        p[3].x(), p[3].y(),
-        std::sqrt(sum / 10.0) - 1.5);
-#endif
       return std::sqrt(sum / 10.0) - 1.5;
     }
     //生成分布（distribution）参量
@@ -170,7 +153,6 @@ namespace yrq {
       double d0 = _amazons_distribution(players[0]);
       double d1 = _amazons_distribution(players[1]);
 #ifdef _DEBUG
-      std::printf("d:%lf\n", w / 20.0 * (d0 - d1));
       emit_key_value("d", w / 20.0 * (d0 - d1), true);
 #endif
       return w / 20.0 * (d0 - d1);
@@ -346,9 +328,6 @@ namespace yrq {
         for (int j = 0; j < 8; ++j)
           if (merged_dm_1[1 - player_idx][i][j] != 255 && dm_1[player_idx][amazon_idx][i][j] <= 1)
             a += std::pow(2.0, -dm_2[player_idx][amazon_idx][i][j]) * _empty_neighbor_num(i, j);
-#ifdef _DEBUG
-      std::printf("the mobility of (%d,%d):%lf\n", players[player_idx][amazon_idx].x(), players[player_idx][amazon_idx].y(), a);
-#endif
       return a;
     }
     //生成移动力（mobility）参量
@@ -361,15 +340,13 @@ namespace yrq {
       for (int i = 0; i < 4; ++i)
         m2 += f_w_m2(_amazon_mobility(1, (size_t)i));
 #ifdef _DEBUG
-      std::printf("m1:%lf m2:%lf f(m1,w):%lf f(m2,w):%lf\n", m1, m2, f_w_m1(m1), f_w_m2(m2));
-      std::printf("m:%lf\n", f_w_m1(m1) - f_w_m2(m2));
       emit_key_value("m1", m1);
       emit_key_value("m2", m2);
       emit_key_value("f(m1,w)", f_w_m1(m1));
       emit_key_value("f(m2,w)", f_w_m2(m2));
       emit_key_value("m", f_w_m2(m2) - f_w_m1(m1));
 #endif
-      return f_w_m2(m2) - f_w_m1(m1);
+      return m2 - m1;
     }
     //扁平化二维距离数组
     class _distance_flat_wrapper {
@@ -409,16 +386,6 @@ namespace yrq {
           auto [found, result] = _only_one_satisfy(is_reachable_closure(i, j));
           if (found) ++exclusive_access_num[result / 4][result % 4];
         }
-#ifdef _DEBUG
-      std::printf("player0: the number of exclusively accessible squares\n");
-      for (int i = 0; i < 4; ++i)
-        std::printf("%llu ", exclusive_access_num[0][i]);
-      printf("\n");
-      std::printf("player1: the number of exclusively accessible squares\n");
-      for (int i = 0; i < 4; ++i)
-        std::printf("%llu ", exclusive_access_num[1][i]);
-      printf("\n");
-#endif
       return exclusive_access_num;
     }
     //生成守卫（guard）参量
@@ -428,7 +395,6 @@ namespace yrq {
       for (auto v : res[0]) sum += v;
       for (auto v : res[1]) sum -= v;
 #ifdef _DEBUG
-      std::printf("n:%llu g:%lf\n", sum, 0.2 * (sum > 0 ? std::pow(1.1, sum) : -std::pow(1.1, -sum)));
       emit_key_value("g(n)", 0.2 * (sum > 0 ? std::pow(1.1, sum) : -std::pow(1.1, -sum)), true);
 #endif
       return 0.2 * (sum > 0 ? std::pow(1.1, sum) : -std::pow(1.1, -sum));

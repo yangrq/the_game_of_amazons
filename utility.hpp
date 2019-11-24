@@ -1,5 +1,6 @@
 #ifndef UTILITY_H
 #define UTILITY_H
+#ifndef ALL_IN_ONE
 #include <cstdint>
 #include <bitset>
 #include <vector>
@@ -9,6 +10,9 @@
 #include <fstream>
 #include <regex>
 #include <filesystem>
+#endif
+
+#if defined(UTILITY) || defined(_DEBUG)
 
 std::ofstream ofs("records.log", std::ios::trunc);
 
@@ -99,5 +103,5 @@ inline bit_matrix_file bit_matrix_file_load(std::string filename) {
   }
   return bm;
 }
-
+#endif
 #endif

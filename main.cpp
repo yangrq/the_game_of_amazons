@@ -1,11 +1,21 @@
 #include "board.hpp"
 #include "evaluator.hpp"
 #include "utility.hpp"
+#include "searcher.hpp"
+#include "interactor.hpp"
+#ifndef ALL_IN_ONE
 #include <chrono>
+#endif
 
 using namespace yrq;
 using namespace std;
 int main(int argc, char** argv) {
+  interactor ita;
+  greedy_searcher scher;
+  auto r = ita.parse_input();
+  auto mv = scher.search_and_select(r);
+  ita.generate_output(mv);
+  /*
   if (argc < 2) cerr << "please select a dataset directory" << endl;
   filesystem::directory_iterator fs_dir_it(argv[1]);
   vector<filesystem::directory_entry> files;
@@ -40,5 +50,5 @@ int main(int argc, char** argv) {
     emit_key_value("}", ":::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::", true);
     cout << "+--------------------------------------------------------------------------------------+" << std::endl;
   }
-
+  */
 }

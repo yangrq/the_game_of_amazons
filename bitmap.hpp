@@ -1,8 +1,10 @@
 #ifndef BITMAP_H
 #define BITMAP_H
+#ifndef ALL_IN_ONE
 #include <cstdint>
 #include <bitset>
 #include <iostream>
+#endif
 
 namespace yrq {
   class bitmap {
@@ -90,6 +92,13 @@ namespace yrq {
       for (int i = 0; i < 8; ++i) {
         for (int j = 0; j < 8; ++j)
           std::cout << ((*this)[i][j] ? "1 " : "0 ");
+        std::cout << std::endl;
+      }
+    }
+    void output_xy() noexcept {
+      for (int i = 0; i < 8; ++i) {
+        for (int j = 0; j < 8; ++j)
+          std::cout << ((*this)[j][i] ? "1 " : "0 ");
         std::cout << std::endl;
       }
     }

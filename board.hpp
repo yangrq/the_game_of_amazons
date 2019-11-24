@@ -1,6 +1,8 @@
 #ifndef BOARD_H
 #define BOARD_H
+#ifndef ALL_IN_ONE
 #include <cstdint>
+#endif
 #include "bitmap.hpp"
 
 namespace yrq {
@@ -17,7 +19,7 @@ namespace yrq {
       uint8_t x() const { return idx >> 5; }
       uint8_t y() const { return (idx & 0x1C) >> 2; }
       bool is_obstacle() { return idx & 1; }
-      bool operator==(const piece& v) {
+      bool operator==(const piece& v) const {
         return v.idx == idx;
       }
       uint8_t eigen_value() const {
@@ -32,39 +34,9 @@ namespace yrq {
     board(bitmap amazon, bitmap _arrow = 0) noexcept :amazon(amazon), arrow(_arrow) {};
     ~board() noexcept {};
     bitmap& get_queen_map() { return amazon; }
+    const bitmap& get_queen_map() const { return amazon; }
     bitmap& get_arrow_map() { return arrow; }
-    bitmap accessible(int y, int x) {
-      bitmap r1, r2, r3, r4, obstacle(amazon | arrow);
-      for (int i = x + 1; i < 8; ++i)
-        if (!obstacle[i][y]) r1[i][y] = 1;
-        else break;
-      for (int i = x - 1; i >= 0; --i)
-        if (!obstacle[i][y]) r2[i][y] = 1;
-        else break;
-      for (int i = y + 1; i < 8; ++i)
-        if (!obstacle[x][i]) r3[x][i] = 1;
-        else break;
-      for (int i = y - 1; i >= 0; --i)
-        if (!obstacle[x][i]) r4[x][i] = 1;
-        else break;
-      for (int i = x + 1, j = y + 1; i < 8 && j < 8; ++i, ++j)
-        if (!obstacle[i][j]) r1[i][j] = 1;
-        else break;
-      for (int i = x + 1, j = y - 1; i < 8 && j >= 0; ++i, --j)
-        if (!obstacle[i][j]) r2[i][j] = 1;
-        else break;
-      for (int i = x - 1, j = y + 1; i >= 0 && j < 8; --i, ++j)
-        if (!obstacle[i][j]) r3[i][j] = 1;
-        else break;
-      for (int i = x - 1, j = y - 1; i >= 0 && j >= 0; --i, --j)
-        if (!obstacle[i][j]) r4[i][j] = 1;
-        else break;
-      return r1 | r2 | r3 | r4;
-    }
-    bitmap accessible_raw(int offset) {
-      int x = offset % 8; int y = offset / 8;
-      return accessible(y, x);
-    }
+    const bitmap& get_arrow_map() const { return arrow; }
     bool is_obstacle(piece t) { return (amazon | arrow)[t.y()][t.x()]; }
     bool is_obstacle(uint8_t x, uint8_t y) { return (amazon | arrow)[y][x]; }
   private:

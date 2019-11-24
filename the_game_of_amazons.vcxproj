@@ -135,6 +135,8 @@
   <ItemGroup>
     <ClInclude Include="board.hpp" />
     <ClInclude Include="evaluator.hpp" />
+    <ClInclude Include="interactor.hpp" />
+    <ClInclude Include="searcher.hpp" />
     <ClInclude Include="utility.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
